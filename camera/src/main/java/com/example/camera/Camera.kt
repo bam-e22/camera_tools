@@ -1,5 +1,9 @@
 package com.example.camera
 
+import android.content.Context
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraManager
+
 fun Context.getAvailableCameraInfo(): String {
     val sb = StringBuilder()
     val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
