@@ -10,6 +10,7 @@ class SimpleMeasurer(
     private var fpsTimer: Timer? = null
     private var framesPerSecond: Int = 0
     private var frameProcessedInOneSecondInterval: Int = 0
+    private val a: Int = 0
 
     fun startTimer() {
         fpsTimer = Timer()
