@@ -1,0 +1,40 @@
+name: Check Submodule Changes
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  check-submodule:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          submodules: recursive # 서브모듈 포함하여 체크아웃
+
+      - name: Check for submodule changes
+        id: check_submodule
+        run: |
+          # 서브모듈 변경 사항 확인
+          git diff --submodule=log ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} > submodule_diff.txt
+
+          # 서브모듈 변경 사항이 있는지 확인
+          if grep -q '^Submodule' submodule_diff.txt; then
+            echo "SUBMODULE_CHANGED=true" >> $GITHUB_ENV
+          else
+            echo "SUBMODULE_CHANGED=false" >> $GITHUB_ENV
+          fi
+
+      - name: Post comment if submodule changed
+        if: env.SUBMODULE_CHANGED == 'true'
+        run: |
+          COMMENT_BODY=$(cat submodule_diff.txt | sed ':a;N;$!ba;s/\n/\\n/g')
+          curl -s -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+               -H "Accept: application/vnd.github.v3+json" \
+               https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
+               -d '{"body":"🚨 **Warning:** This PR includes changes to submodules. Please review carefully.\n\n```\n'"$COMMENT_BODY"'\n```"}'
